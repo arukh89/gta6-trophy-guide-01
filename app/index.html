@@ -3,23 +3,106 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>GTA VI trophy checklist</title>
+<title>Leonida Trophy Guide — GTA VI · 55 trophies</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<header>
-  <h1>GTA VI trophy checklist</h1>
-  <p id="progress">0 of 55 earned</p>
+<p class="demo-banner" id="demoBanner" hidden>Demo data — not your real progress. <button id="exitDemo" type="button">Exit demo</button></p>
+<header class="hero">
+  <p class="eyebrow">Grand Theft Auto VI &middot; PlayStation 5</p>
+  <h1>Leonida Trophy Guide</h1>
+  <p class="subtitle">All 55 official trophies — a tracker, a roadmap to the platinum, and a cited guide for every trophy. Works offline, no account, no network.</p>
+  <div class="progress" id="progressPanel">
+    <p class="big-count"><span id="progressCount">0 of 55 earned</span> <span class="pct" id="progressPct">0%</span></p>
+    <div class="bar" aria-hidden="true"><div class="bar-fill" id="progressBar" style="width:0%"></div></div>
+    <p class="grade-chips" id="gradeChips"></p>
+    <p class="platinum-line" id="platinumLine">Platinum “Vice Got a Price!” unlocks when the other 54 are earned.</p>
+  </div>
 </header>
-<div class="controls">
-  <label>Grade <select id="grade"><option value="all">All</option><option value="platinum">Platinum</option><option value="gold">Gold</option><option value="silver">Silver</option><option value="bronze">Bronze</option></select></label>
-  <button id="export" type="button">Export progress</button>
-  <label class="import">Import progress <input id="import" type="file" accept="application/json"></label>
-</div>
-<table>
-  <thead><tr><th>Earned</th><th>Trophy</th><th>Grade</th><th>How to get it</th></tr></thead>
-  <tbody id="rows"></tbody>
-</table>
+
+<main>
+  <section class="controls" aria-label="Filters and progress tools">
+    <label class="control search">Search
+      <input id="search" type="search" placeholder="Search name, description or guide…" autocomplete="off">
+    </label>
+    <label class="control">Grade
+      <select id="gradeFilter">
+        <option value="all">All grades</option>
+        <option value="platinum">Platinum</option>
+        <option value="gold">Gold</option>
+        <option value="silver">Silver</option>
+        <option value="bronze">Bronze</option>
+      </select>
+    </label>
+    <label class="control">Kind
+      <select id="kindFilter">
+        <option value="all">All kinds</option>
+        <option value="story">Story</option>
+        <option value="missable">Missable</option>
+        <option value="collectibles">Collectibles</option>
+        <option value="activities">Activities</option>
+      </select>
+    </label>
+    <label class="check"><input id="hideEarned" type="checkbox"> Hide earned</label>
+    <label class="check spoiler"><input id="spoilerToggle" type="checkbox" checked> Spoiler mode</label>
+    <p class="spoiler-note">Spoiler mode hides the name and description of story trophies you have not earned yet, so the story stays unspoiled. Earned trophies always show. 28 trophies are hidden on PlayStation until earned.</p>
+    <div class="tools">
+      <button id="exportBtn" type="button">Export progress</button>
+      <label class="import-btn">Import progress <input id="importFile" type="file" accept="application/json,.json"></label>
+      <p class="import-msg" id="importMsg" role="status"></p>
+    </div>
+    <details class="shortcuts" id="shortcuts">
+      <summary>Keyboard shortcuts — press ? to show or hide</summary>
+      <ul>
+        <li><kbd>/</kbd> — focus search</li>
+        <li><kbd>s</kbd> — toggle spoiler mode</li>
+        <li><kbd>h</kbd> — toggle hide earned</li>
+        <li><kbd>?</kbd> — show or hide this list</li>
+      </ul>
+    </details>
+  </section>
+
+  <section class="nextup" aria-label="Next up">
+    <h2>Next up</h2>
+    <p class="section-note">Missables first, then the trophies closest to done, then your current roadmap stage. Updates as you tick things off.</p>
+    <ol class="nextup-list" id="nextUp"></ol>
+  </section>
+
+  <section class="roadmap" aria-label="Roadmap to the platinum">
+    <h2>Roadmap to the platinum</h2>
+    <p class="section-note">Five stages in play order, built from the official descriptions. Clear the missables before the cleanup stage.</p>
+    <ol class="stages" id="roadmap"></ol>
+  </section>
+
+  <section class="missables" aria-label="Missable trophies">
+    <h2>Missable trophies — do these first</h2>
+    <p class="section-note" id="missableRule"></p>
+    <ul class="missable-list" id="missableList"></ul>
+  </section>
+
+  <div class="layout">
+    <section class="list-col" aria-label="Trophy checklist">
+      <h2>Trophy checklist</h2>
+      <p class="result-count" id="resultCount"></p>
+      <ul class="trophy-list" id="trophyList"></ul>
+    </section>
+    <aside class="detail-col" aria-label="Trophy guide">
+      <div class="detail" id="detail">
+        <h2>Pick a trophy</h2>
+        <p>Select any trophy on the left to see its guide and its sources here.</p>
+        <p class="detail-hint">Each guide is written in this guide’s own words. Where a guide goes beyond the official description, it says so — and where an exact location is not yet confirmed in public guides, it says that too.</p>
+      </div>
+    </aside>
+  </div>
+
+  <footer class="about">
+    <h2>About this guide</h2>
+    <p id="sourcesNote"></p>
+    <p>Missable rule: a trophy counts as missable only when its official description implies a one-chance condition — undetected, back-to-back, a single use of something, a story choice, or a second attempt that counts. Story chapter and mission trophies are never flagged missable: they unlock by playing the campaign.</p>
+    <p>Hidden trophies: the hidden flag follows the official PSN list (28 hidden). Spoiler mode above hides story trophies until you earn them, whatever their hidden flag.</p>
+    <p class="fineprint">An independent, fan-made guide. Not affiliated with the game's publisher or the platform holder. No official logo or artwork is used here, and this page loads nothing over the network — every file it needs sits in its own folder. Progress, counters and notes are saved only in your browser (localStorage); export downloads a file, import reads only the file you choose.</p>
+  </footer>
+</main>
 <script type="module" src="app.js"></script>
 </body>
 </html>
