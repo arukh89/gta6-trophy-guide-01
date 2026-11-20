@@ -15,7 +15,12 @@ export function loadEarned() {
 }
 
 export function saveEarned(earned) {
-  localStorage.setItem(EARNED_KEY, JSON.stringify([...earned]));
+  try {
+    localStorage.setItem(EARNED_KEY, JSON.stringify([...earned]));
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 // Clamp a counter to its trophy's range: a whole number from 0 to target.
@@ -49,7 +54,12 @@ export function saveCounters(counters) {
   for (const [name, value] of counters) {
     if (value > 0) obj[name] = value;
   }
-  localStorage.setItem(COUNTERS_KEY, JSON.stringify(obj));
+  try {
+    localStorage.setItem(COUNTERS_KEY, JSON.stringify(obj));
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export function loadNotes() {
@@ -72,15 +82,32 @@ export function saveNotes(notes) {
   for (const [name, text] of notes) {
     if (text.trim()) obj[name] = text;
   }
-  localStorage.setItem(NOTES_KEY, JSON.stringify(obj));
+  try {
+    localStorage.setItem(NOTES_KEY, JSON.stringify(obj));
+    return true;
+  } catch {
+    return false;
+  }
 }
 
+// Every localStorage access is guarded: a blocked or full storage must never throw
+// into the app. Loads fall back to empty/default; saves return false so the caller
+// can keep going in memory and warn once instead of leaving the UI stale.
 export function loadSpoiler() {
-  return localStorage.getItem(SPOILER_KEY) !== 'off';
+  try {
+    return localStorage.getItem(SPOILER_KEY) !== 'off';
+  } catch {
+    return true;
+  }
 }
 
 export function saveSpoiler(on) {
-  localStorage.setItem(SPOILER_KEY, on ? 'on' : 'off');
+  try {
+    localStorage.setItem(SPOILER_KEY, on ? 'on' : 'off');
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export function downloadExport({ earned, counters, notes }) {
@@ -97,7 +124,9 @@ export function downloadExport({ earned, counters, notes }) {
   a.href = URL.createObjectURL(blob);
   a.download = 'leonida-trophy-progress.json';
   a.click();
-  URL.revokeObjectURL(a.href);
+  // Revoke after a short delay, not synchronously: some browsers need the URL
+  // to outlive the click dispatch for the download to start.
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
 
 // Reads an import file's text and folds it into earned, counters and notes.
@@ -105,7 +134,8 @@ export function downloadExport({ earned, counters, notes }) {
 // "notes" (our export format). Unknown names are ignored and counted, counters are
 // clamped to their trophy's target, so a file from another guide cannot corrupt progress.
 // byName maps trophy name -> trophy (for target clamping). Returns
-// { added, unknown, total, countersAdded, notesAdded, earned, counters, notes }.
+// { added, unknown, total, countersAdded, notesAdded, saved, earned, counters, notes }:
+// saved is false when a write to storage failed (state still applies in memory).
 export function importProgressText(text, knownNames, byName) {
   const parsed = JSON.parse(text);
   const names = Array.isArray(parsed) ? parsed : parsed.earned;
@@ -118,7 +148,7 @@ export function importProgressText(text, knownNames, byName) {
     if (!knownNames.has(name)) { unknown += 1; continue; }
     if (!earned.has(name)) { earned.add(name); added += 1; }
   }
-  saveEarned(earned);
+  const savedEarned = saveEarned(earned);
   let countersAdded = 0;
   let notesAdded = 0;
   const counters = loadCounters();
@@ -127,7 +157,10 @@ export function importProgressText(text, knownNames, byName) {
     if (parsed.counters && typeof parsed.counters === 'object') {
       for (const [name, value] of Object.entries(parsed.counters)) {
         const t = byName ? byName.get(name) : undefined;
-        if (!t || t.target == null) { unknown += 1; continue; }
+        // Only a name no trophy carries counts as unknown. A known trophy
+        // without a PSN target simply has no counter to import — skip it.
+        if (!t) { unknown += 1; continue; }
+        if (t.target == null) continue;
         const n = clampCount(value, t.target);
         if (n > 0 && counters.get(name) !== n) { counters.set(name, n); countersAdded += 1; }
       }
@@ -139,7 +172,6 @@ export function importProgressText(text, knownNames, byName) {
       }
     }
   }
-  saveCounters(counters);
-  saveNotes(notes);
-  return { added, unknown, total: names.length, countersAdded, notesAdded, earned, counters, notes };
+  const saved = savedEarned && saveCounters(counters) && saveNotes(notes);
+  return { added, unknown, total: names.length, countersAdded, notesAdded, saved, earned, counters, notes };
 }

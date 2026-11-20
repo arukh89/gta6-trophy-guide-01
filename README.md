@@ -9,6 +9,13 @@ Leonida Trophy Guide — an offline guide and tracker for all 55 Grand Theft Aut
 ## Run it
 
 ```sh
+node serve.ts
+# then open http://localhost:8080
+```
+
+Build the submission dossier instead:
+
+```sh
 mkdir -p out && MAKEFUN_OUTPUT_DIR=out node main.ts
 ```
 

@@ -7,9 +7,9 @@
 // The program hands the guide in: it copies app/ and screenshots/ from beside this file
 // to /output and writes /output/dossier.json, the summary the judge reads (the
 // screenshots, the first load's files and bytes, and the source), with the vendored
-// make.fun library. Screenshots are real renders of this guide's own code: R1 keeps the
-// starter's three shots in place, and R3 replaces them with four shots of the finished
-// guide (checklist cover, guide pane, roadmap, missables). Leave vendor/makefun-frontend.ts
+// make.fun library. Screenshots are real renders of this guide's own code: four shots of
+// the finished guide (guide pane cover, checklist, roadmap, missables), re-rendered each
+// round from the current code. Leave vendor/makefun-frontend.ts
 // as it is: the scorer requires dossier.json to be byte for byte what its own copy writes.
 //
 // Serve it locally with `node serve.ts`, then open http://localhost:8080.

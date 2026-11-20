@@ -23,11 +23,11 @@ body {
 main { max-width: 1180px; margin: 0 auto; padding: 0 20px 48px; }
 a { color: var(--gold); }
 
-/* Hero */
+/* Hero — kept compact so the checklist starts as high up the page as possible. */
 .hero {
   max-width: 1180px;
   margin: 0 auto;
-  padding: 40px 20px 8px;
+  padding: 24px 20px 8px;
   border-bottom: 3px solid var(--gold);
 }
 .eyebrow {
@@ -40,14 +40,14 @@ a { color: var(--gold); }
 }
 .hero h1 {
   font-family: var(--display);
-  font-size: 52px;
+  font-size: 44px;
   line-height: 1.05;
-  margin: 0 0 10px;
+  margin: 0 0 8px;
   color: var(--text);
 }
-.subtitle { color: var(--muted); max-width: 720px; margin: 0 0 20px; font-size: 17px; }
-.progress { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px; }
-.big-count { font-family: var(--display); font-size: 30px; margin: 0 0 8px; }
+.subtitle { color: var(--muted); max-width: 720px; margin: 0 0 12px; font-size: 17px; }
+.progress { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 14px 20px; }
+.big-count { font-family: var(--display); font-size: 26px; margin: 0 0 6px; }
 .big-count .pct { color: var(--gold); font-size: 24px; margin-left: 8px; }
 .bar { height: 10px; background: var(--surface-2); border-radius: 6px; overflow: hidden; }
 .bar-fill { height: 100%; background: linear-gradient(90deg, var(--gold), var(--pink)); border-radius: 6px; transition: width 0.3s; }
@@ -62,7 +62,7 @@ a { color: var(--gold); }
 .controls {
   display: flex; flex-wrap: wrap; gap: 14px 18px; align-items: end;
   background: var(--surface); border: 1px solid var(--line); border-radius: 14px;
-  padding: 16px 18px; margin: 24px 0;
+  padding: 16px 18px; margin: 16px 0;
 }
 .control { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--muted); }
 .control.search { flex: 1 1 260px; }
@@ -103,7 +103,8 @@ kbd {
 }
 
 /* Next up */
-.nextup { margin: 28px 0; }
+.nextup { margin: 20px 0; }
+.nextup-more { color: var(--pink); font-size: 13px; font-weight: 700; margin: 10px 0 0; }
 .nextup-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
 .nextup-item {
   background: var(--surface); border: 1px solid var(--gold); border-radius: 14px; padding: 12px 14px;
@@ -146,7 +147,7 @@ kbd {
 /* Sections */
 h2 { font-family: var(--display); font-size: 26px; margin: 0 0 6px; letter-spacing: 0.01em; }
 .section-note { color: var(--muted); margin: 0 0 14px; }
-.roadmap, .missables { margin: 28px 0; }
+.roadmap, .missables { margin: 20px 0; }
 .stages { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
 .stages li {
   background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px;
@@ -169,7 +170,7 @@ h2 { font-family: var(--display); font-size: 26px; margin: 0 0 6px; letter-spaci
 }
 
 /* Checklist + detail layout */
-.layout { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: 24px; align-items: start; margin-top: 28px; }
+.layout { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: 24px; align-items: start; margin-top: 20px; }
 .result-count { color: var(--muted); margin: 0 0 10px; }
 .trophy-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
 .trophy-list li {

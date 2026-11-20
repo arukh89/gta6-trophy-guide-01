@@ -45,7 +45,7 @@
     </label>
     <label class="check"><input id="hideEarned" type="checkbox"> Hide earned</label>
     <label class="check spoiler"><input id="spoilerToggle" type="checkbox" checked> Spoiler mode</label>
-    <p class="spoiler-note">Spoiler mode hides the name and description of story trophies you have not earned yet, so the story stays unspoiled. Earned trophies always show. 28 trophies are hidden on PlayStation until earned.</p>
+    <p class="spoiler-note">Spoiler mode hides the name and description of story trophies you have not earned yet, so the story stays unspoiled. Earned trophies always show. The platinum is always shown — it is the goal of this guide. 28 trophies are hidden on PlayStation until earned.</p>
     <div class="tools">
       <button id="exportBtn" type="button">Export progress</button>
       <label class="import-btn">Import progress <input id="importFile" type="file" accept="application/json,.json"></label>
@@ -66,6 +66,7 @@
     <h2>Next up</h2>
     <p class="section-note">Missables first, then the trophies closest to done, then your current roadmap stage. Updates as you tick things off.</p>
     <ol class="nextup-list" id="nextUp"></ol>
+    <p class="nextup-more" id="nextUpMore"></p>
   </section>
 
   <section class="roadmap" aria-label="Roadmap to the platinum">
@@ -84,7 +85,7 @@
     <section class="list-col" aria-label="Trophy checklist">
       <h2>Trophy checklist</h2>
       <p class="result-count" id="resultCount"></p>
-      <ul class="trophy-list" id="trophyList"></ul>
+      <ul class="trophy-list" id="trophyList"><li>Loading the trophy list — if this stays here, open this guide through a local server (for example: node serve.ts) instead of opening the file directly.</li></ul>
     </section>
     <aside class="detail-col" aria-label="Trophy guide">
       <div class="detail" id="detail">
@@ -98,8 +99,8 @@
   <footer class="about">
     <h2>About this guide</h2>
     <p id="sourcesNote"></p>
-    <p>Missable rule: a trophy counts as missable only when its official description implies a one-chance condition — undetected, back-to-back, a single use of something, a story choice, or a second attempt that counts. Story chapter and mission trophies are never flagged missable: they unlock by playing the campaign.</p>
-    <p>Hidden trophies: the hidden flag follows the official PSN list (28 hidden). Spoiler mode above hides story trophies until you earn them, whatever their hidden flag.</p>
+    <p>Missable rule: a trophy counts as missable only when its official description implies a one-chance condition — undetected, back-to-back, a single use of something, a story choice, or a second attempt that counts. Chapter and mission trophies are never flagged missable: they unlock by playing the campaign.</p>
+    <p>Hidden trophies: the hidden flag follows the official PSN list (28 hidden). Spoiler mode above hides story trophies until you earn them, whatever their hidden flag — except the platinum, which is always shown because it is the goal of this guide.</p>
     <p class="fineprint">An independent, fan-made guide. Not affiliated with the game's publisher or the platform holder. No official logo or artwork is used here, and this page loads nothing over the network — every file it needs sits in its own folder. Progress, counters and notes are saved only in your browser (localStorage); export downloads a file, import reads only the file you choose.</p>
   </footer>
 </main>

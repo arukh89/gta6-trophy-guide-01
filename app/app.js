@@ -4,10 +4,26 @@
 // Demo mode (?demo=1) holds its state in memory only and never writes localStorage.
 import { loadEarned, saveEarned, loadSpoiler, saveSpoiler, loadCounters, saveCounters, loadNotes, saveNotes, clampCount, downloadExport, importProgressText } from './store.js';
 import { applyFilters, countByGrade, isSpoilered } from './filters.js';
-import { planNextUp } from './planner.js';
+import { planNextUp, countCutMissables } from './planner.js';
 import { demoState } from './demo.js';
 
-const doc = await (await fetch('data/trophies.json')).json();
+// Boot: load the trophy list. A failed fetch or broken JSON must say so on the
+// page instead of leaving a silent empty shell (the static "loading" line in
+// index.html covers the case where this module itself never runs, e.g. file://).
+let doc;
+try {
+  const res = await fetch('data/trophies.json');
+  if (!res.ok) throw new Error(`trophy list HTTP ${res.status}`);
+  doc = await res.json();
+} catch {
+  const list = document.getElementById('trophyList');
+  if (list) {
+    const li = document.createElement('li');
+    li.textContent = 'Could not load the trophy list. Open this guide through a local server (for example: node serve.ts) instead of opening the file directly — browsers block local files from loading their data.';
+    list.replaceChildren(li);
+  }
+  throw new Error('trophy list failed to load');
+}
 const trophies = doc.trophies;
 const knownNames = new Set(trophies.map((t) => t.name));
 const byName = new Map(trophies.map((t) => [t.name, t]));
@@ -22,20 +38,53 @@ let spoilerOn = demo ? true : loadSpoiler();
 let selected = null;
 const filters = { query: '', grade: 'all', kind: 'all', hideEarned: false };
 
-// In demo mode every persist is a no-op: the demo state lives in memory only and
-// must never overwrite the reader's real progress in localStorage.
-function persistEarned() { if (!demo) saveEarned(earned); }
-function persistCounters() { if (!demo) saveCounters(counters); }
-function persistNotes() { if (!demo) saveNotes(notes); }
-function persistSpoiler() { if (!demo) saveSpoiler(spoilerOn); }
-
 const $ = (id) => document.getElementById(id);
+
+// Storage can fail (private mode, quota, disabled): never let a throw break the
+// UI. A failed save keeps the state in memory and warns once in #importMsg;
+// handlers below still re-render either way.
+let storageWarned = false;
+function warnStorageOnce() {
+  if (storageWarned) return;
+  storageWarned = true;
+  const msg = $('importMsg');
+  if (msg) msg.textContent = 'Progress could not be saved in this browser (storage unavailable) — changes stay for this visit only.';
+}
+function persistEarned() { if (!demo && !saveEarned(earned)) warnStorageOnce(); }
+function persistCounters() { if (!demo && !saveCounters(counters)) warnStorageOnce(); }
+function persistNotes() { if (!demo && !saveNotes(notes)) warnStorageOnce(); }
+function persistSpoiler() { if (!demo && !saveSpoiler(spoilerOn)) warnStorageOnce(); }
+
+// Validate loaded progress against the trophy list: names from an older list are
+// dropped, counters are clamped to their trophy's target, and the cleaned state
+// is written back — stored progress can never claim "56 of 55 earned".
+function sanitizeLoadedProgress() {
+  let changed = false;
+  for (const name of [...earned]) {
+    if (!knownNames.has(name)) { earned.delete(name); changed = true; }
+  }
+  for (const [name, value] of [...counters]) {
+    const t = byName.get(name);
+    const n = t ? clampCount(value, t.target) : 0;
+    if (n === 0) { counters.delete(name); changed = true; }
+    else if (n !== value) { counters.set(name, n); changed = true; }
+  }
+  for (const name of [...notes.keys()]) {
+    if (!knownNames.has(name)) { notes.delete(name); changed = true; }
+  }
+  if (changed) { persistEarned(); persistCounters(); persistNotes(); }
+}
+sanitizeLoadedProgress();
+
 const gradeLabel = (g) => g.charAt(0).toUpperCase() + g.slice(1);
-const countOf = (t) => counters.get(t.name) ?? 0;
+// The one clamped count: a stored counter can never exceed its trophy's target.
+const countOf = (t) => clampCount(counters.get(t.name), t.target);
+const pctOf = (done, total) => (total > 0 ? Math.round((done / total) * 100) : 0);
+const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
 
 function renderProgress() {
   $('progressCount').textContent = `${earned.size} of ${trophies.length} earned`;
-  const pct = Math.round((earned.size / trophies.length) * 100);
+  const pct = pctOf(earned.size, trophies.length);
   $('progressPct').textContent = `${pct}%`;
   $('progressBar').style.width = `${pct}%`;
   const counts = countByGrade(trophies, earned);
@@ -56,6 +105,10 @@ function renderNextUp() {
   const list = $('nextUp');
   list.replaceChildren();
   const picks = planNextUp(trophies, doc.roadmap, earned, counters);
+  const cut = countCutMissables(trophies, earned, picks);
+  $('nextUpMore').textContent = cut > 0
+    ? `+${cut} more missable below — see the missables section.`
+    : '';
   if (picks.length === 0) {
     const li = document.createElement('li');
     li.textContent = 'Everything is earned — the platinum is yours.';
@@ -98,7 +151,7 @@ function renderRoadmap() {
     const bar = document.createElement('div');
     bar.className = 'stage-bar';
     const fill = document.createElement('div');
-    fill.style.width = `${Math.round((done / stage.ids.length) * 100)}%`;
+    fill.style.width = `${pctOf(done, stage.ids.length)}%`;
     bar.append(fill);
     li.append(h, p, count, bar);
     list.append(li);
@@ -111,14 +164,20 @@ function renderMissables() {
   list.replaceChildren();
   for (const t of trophies.filter((x) => x.missable)) {
     const li = document.createElement('li');
+    // Same spoiler rule as the checklist and Next-up: a story trophy that is
+    // not earned yet shows as "Hidden story trophy" and its note stays hidden.
+    const hidden = isSpoilered(t, spoilerOn, earned);
     const strong = document.createElement('strong');
-    strong.textContent = t.name;
+    strong.textContent = hidden ? 'Hidden story trophy' : t.name;
     const flag = document.createElement('span');
     flag.className = 'flag';
     flag.textContent = 'Missable';
-    const p = document.createElement('p');
-    p.textContent = t.missable_note;
-    li.append(strong, flag, p);
+    li.append(strong, flag);
+    if (!hidden) {
+      const p = document.createElement('p');
+      p.textContent = t.missable_note;
+      li.append(p);
+    }
     li.addEventListener('click', () => { selected = t.name; renderList(); renderDetail(); });
     list.append(li);
   }
@@ -128,7 +187,7 @@ function counterBar(t) {
   const wrap = document.createElement('span');
   wrap.className = 'counter-mini';
   const n = countOf(t);
-  const pct = Math.round((n / t.target) * 100);
+  const pct = pctOf(n, t.target);
   const bar = document.createElement('span');
   bar.className = 'counter-bar';
   const fill = document.createElement('span');
@@ -152,6 +211,7 @@ function trophyRow(t) {
   const box = document.createElement('input');
   box.type = 'checkbox';
   box.checked = isEarned;
+  box.dataset.trophy = t.name;
   box.setAttribute('aria-label', `Mark ${hidden ? 'hidden story trophy' : t.name} earned`);
   box.addEventListener('click', (e) => e.stopPropagation());
   box.addEventListener('change', () => {
@@ -159,6 +219,10 @@ function trophyRow(t) {
     else earned.delete(t.name);
     persistEarned();
     renderAll();
+    // renderAll rebuilds the list, which destroys this checkbox: hand focus back
+    // to the same trophy's new checkbox so keyboard users do not lose their place.
+    const next = document.querySelector(`#trophyList input[type="checkbox"][data-trophy="${CSS.escape(t.name)}"]`);
+    if (next) next.focus();
   });
 
   const name = document.createElement('span');
@@ -282,7 +346,7 @@ function renderDetail() {
     const bar = document.createElement('div');
     bar.className = 'counter-bar big';
     const fill = document.createElement('div');
-    fill.style.width = `${Math.round((countOf(t) / t.target) * 100)}%`;
+    fill.style.width = `${pctOf(countOf(t), t.target)}%`;
     bar.append(fill);
     row.append(minus, input, plus, bar);
     panel.append(row);
@@ -333,6 +397,7 @@ function renderAll() {
   renderProgress();
   renderNextUp();
   renderRoadmap();
+  renderMissables();
   renderList();
   renderDetail();
 }
@@ -361,11 +426,12 @@ $('importFile').addEventListener('change', async (e) => {
     earned = result.earned;
     counters = result.counters;
     notes = result.notes;
-    const bits = [`Imported ${result.added} new trophies from ${result.total} names`];
-    if (result.countersAdded) bits.push(`${result.countersAdded} counters`);
-    if (result.notesAdded) bits.push(`${result.notesAdded} notes`);
+    const bits = [`Imported ${plural(result.added, 'new trophy', 'new trophies')} from ${plural(result.total, 'name', 'names')}`];
+    if (result.countersAdded) bits.push(plural(result.countersAdded, 'counter', 'counters'));
+    if (result.notesAdded) bits.push(plural(result.notesAdded, 'note', 'notes'));
     $('importMsg').textContent = bits.join(', ') +
-      (result.unknown ? ` (${result.unknown} names not recognised, ignored).` : '.');
+      (result.unknown ? ` (${plural(result.unknown, 'name', 'names')} not recognised, ignored).` : '.');
+    if (!result.saved) warnStorageOnce();
     renderAll();
   } catch {
     $('importMsg').textContent = 'That file is not valid progress JSON — nothing was changed.';
@@ -408,5 +474,4 @@ if (demo) {
 }
 
 $('sourcesNote').textContent = doc.sources_note;
-renderMissables();
 renderAll();

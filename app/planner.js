@@ -4,20 +4,29 @@
 //   (b) then unearned counted trophies closest to done (highest count/target);
 //   (c) then unearned trophies from the current roadmap stage, in stage order.
 // Earned trophies never appear. Deterministic: ties break by trophy id.
+// Counts are clamped through store.js's clampCount, the one canonical clamp.
+import { clampCount } from './store.js';
+
 export function ratioFor(trophy, counts) {
   if (!trophy || trophy.target == null || trophy.target <= 0) return 0;
   const raw = counts instanceof Map ? counts.get(trophy.name) : counts?.[trophy.name];
-  const n = Number.isFinite(Number(raw)) ? Number(raw) : 0;
-  if (n <= 0) return 0;
-  return Math.min(n, trophy.target) / trophy.target;
+  return clampCount(raw, trophy.target) / trophy.target;
+}
+
+// How many unearned missables did the 5-pick cap cut off? The app shows this as
+// "+N more missable below" under Next-up, so the 6th missable is never silently hidden.
+export function countCutMissables(trophies, earned, picks) {
+  const done = earned instanceof Set ? earned : new Set(earned ?? []);
+  const total = trophies.filter((t) => t.missable && !done.has(t.name)).length;
+  const shown = (picks ?? []).filter((p) => p.kind === 'missable').length;
+  return Math.max(0, total - shown);
 }
 
 export function planNextUp(trophies, roadmap, earned, counts) {
   const done = earned instanceof Set ? earned : new Set(earned ?? []);
   const countOf = (t) => {
     const raw = counts instanceof Map ? counts.get(t.name) : counts?.[t.name];
-    const n = Number.isFinite(Number(raw)) ? Number(raw) : 0;
-    return Math.max(0, Math.min(n, t.target ?? 0));
+    return clampCount(raw, t.target ?? null);
   };
   const out = [];
   const push = (t, kind, reason) => {
